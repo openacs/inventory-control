@@ -22,33 +22,6 @@ drop table qci_ec_custom_product_fields_audit;
 
 drop table qci_ec_custom_product_fields;
 
-drop trigger qci_ec_product_reviews_audit_tr on qci_ec_product_reviews;
-
-drop function qci_ec_product_reviews_audit_tr;
-
-drop table qci_ec_product_reviews_audit;
-
-drop index qci_ec_product_reviews_idx2 on qci_ec_product_reviews;
-drop index qci_ec_product_reviews_idx on qci_ec_product_reviews;
-
-drop table qci_ec_product_reviews;
-
-
-drop view qci_ec_product_review_id_sequence;
-drop sequence qci_ec_product_review_id_seq;
-
-
-drop trigger qci_ec_product_comments_audit_tr on qci_ec_product_comments;
-
-drop function qci_ec_product_comments_audit_tr ();
-
-drop table qci_ec_product_comments_audit ();
-
-drop index qci_ec_product_comments_idx3 on qci_ec_product_comments();
-drop index qci_ec_product_comments_idx2 on qci_ec_product_comments();
-drop index qci_ec_product_comments_idx on qci_ec_product_comments();
-
-drop table qci_ec_product_comments ();
 
 
 
