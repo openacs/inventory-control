@@ -57,3 +57,32 @@ begin
     space_sep_list := substring(space_sep_list from first_space+1);
   end loop;  
 end;' language 'plpgsql';
+
+-- Helper stuff (ben@adida.net)
+-- gilbertw - I pulled this from OpenACS 3.2.5
+-- there are a few calls to the Oracle least function
+create function qci_least(numeric,numeric)
+returns numeric
+as '
+DECLARE
+        first alias for $1;
+        second alias for $2;
+BEGIN
+        if first < second
+        then return first;
+        else return second;
+        end if;
+END;
+' language 'plpgsql';
+
+-- gilbertw
+-- timespan_days taken from OpenACS 3.2.5
+-- can't cast numeric to varchar/text so I made the input varchar
+create function qci_timespan_days(float) returns interval as '
+DECLARE
+        n_days alias for $1;
+BEGIN
+        return (n_days::text || '' days'')::interval;
+END;
+' language 'plpgsql';
+

@@ -8,18 +8,8 @@
 
 -- following from SL
 
-CREATE TABLE qci_makemodel (
-  parts_id integer,
-  make text,
-  model text
-);
-
-create index qci_makemodel_parts_id_key on qci_makemodel (parts_id);
-create index qci_makemodel_make_key on qci_makemodel (lower(make));
-create index qci_makemodel_model_key on qci_makemodel (lower(model));
-
-
 CREATE TABLE qci_warehouse (
+-- TODO: associate the warehouse with a contacts record
   id int default nextval('id'),
   description text
 );
@@ -32,70 +22,13 @@ CREATE TABLE qci_inventory (
   orderitems_id int,
   qty float4,
   shippingdate date,
+-- following for auditing
   employee_id int
 );
 
 
-CREATE FUNCTION qci_check_inventory() RETURNS OPAQUE AS '
-
-declare
-  itemid int;
-  row_data inventory%rowtype;
-
-begin
-
-  if not old.quotation then
-    for row_data in select * from qci_inventory where trans_id = old.id loop
-      select into itemid id from orderitems where trans_id = old.id and id = row_data.orderitems_id;
-
-      if itemid is null then
-	delete from qci_inventory where trans_id = old.id and orderitems_id = row_data.orderitems_id;
-      end if;
-    end loop;
-  end if;
-return old;
-end;
-' language 'plpgsql';
--- end function
-
-
-
-
-
 --  following from ecommerce package
-
--- Helper stuff (ben@adida.net)
--- gilbertw - I pulled this from OpenACS 3.2.5
--- there are a few calls to the Oracle least function
-create function qci_least(numeric,numeric)
-returns numeric
-as '
-DECLARE
-        first alias for $1;
-        second alias for $2;
-BEGIN
-        if first < second
-        then return first;
-        else return second;
-        end if;
-END;
-' language 'plpgsql';
-
--- gilbertw
--- timespan_days taken from OpenACS 3.2.5
--- can't cast numeric to varchar/text so I made the input varchar
-create function qci_timespan_days(float) returns interval as '
-DECLARE
-        n_days alias for $1;
-BEGIN
-        return (n_days::text || '' days'')::interval;
-END;
-' language 'plpgsql';
-
-
--- this should be replaced by the object_id sequence
--- grep for it in files...
--- create sequence ec_product_id_sequence start 1;
+-- TODO move products db into CR
 
 -- This table contains the products and also the product series.
 -- A product series has the same fields as a product (it actually
@@ -145,147 +78,8 @@ end;' language 'plpgsql';
 select inline_0 ();
 drop function inline_0 ();
 
--- wtem@olywa.net, 2001-03-24
--- we aren't going to bother to define all the attributes of an ec_product type
--- for now, because we are just using it for site-wide-search anyway
--- we have a corresponding pl/sql package for the ec_product object_type
--- it can be found at ecommerce/sql/ec-product-package-create.sql
--- and is called at the end of this script
-create table qci_ec_products (
-        product_id              integer constraint qci_ec_products_product_id_fk
-				references acs_objects(object_id)
-				on delete cascade
-				constraint qci_ec_products_product_id_pk
-				primary key,
-	-- above changed by wtem@olywa.net, 2001-03-24
-	                        -- integer not null primary key,
-        sku                     varchar(100),
-        product_name            varchar(200),
-        creation_date           timestamptz default current_timestamp not null,
-        one_line_description    varchar(400),
-        detailed_description    varchar(4000),
-        search_keywords         varchar(4000),
-        -- this is the regular price for the product.  If user
-        -- classes are charged a different price, it should be
-        -- specified in qci_ec_product_user_class_prices
-        price                   numeric, 
-        -- for stuff that can't be shipped like services
-        no_shipping_avail_p     boolean default 'f',
-        -- leave this blank if shipping is calculated using
-        -- one of the more complicated methods available
-        shipping                numeric,
-        -- fill this in if shipping is calculated by: above price
-        -- for first item (with this product_id), and the below
-        -- price for additional items (with this product_id)
-        shipping_additional     numeric,
-        -- fill this in if shipping is calculated using weight
-        -- use whatever units you want (lbs/kg), just be consistent
-        -- and make your shipping algorithm take the units into
-        -- account
-        weight                  numeric,
-        -- holds pictures, sample chapters, etc.
-	dirname                 varchar(200),
-        -- whether this item should show up in searches (e.g., if it's
-        -- a volume of a series, you might not want it to)
-        present_p               boolean default 't',
-        -- whether the item should show up at all in the user pages
-        active_p                boolean default 't',
-        -- the date the product becomes available for sale (it can be listed
-        -- before then, it's just not buyable)
-	available_date          timestamptz default current_timestamp not null,
-        announcements           varchar(4000),
-        announcements_expire    timestamptz,
-        -- if there's a web site with more info about the product
-        url                     varchar(300),
-        template_id             integer references ecca_ec_templates,
-        -- o = out of stock, q = ships quickly, m = ships
-        -- moderately quickly, s = ships slowly, i = in stock
-        -- with no message about the speed of the shipment (shipping
-        -- messages are in parameters .ini file)
-        stock_status            char(1) check (stock_status in ('o','q','m','s','i')),
-        -- comma-separated lists of available colors, sizes, and styles for the user
-        -- to choose upon ordering
-        color_list              varchar(4000),
-        size_list               varchar(4000),
-        style_list              varchar(4000),
-        -- email this list on purchase
-        email_on_purchase_list  varchar(4000),
-        -- the user ID and IP address of the creator of the product
-        last_modified           timestamptz not null,
-        last_modifying_user     integer not null references users,
-        modified_ip_address     varchar(20) not null    
-);
 
-create view qci_ec_products_displayable
-as
-select * from qci_ec_products
-where active_p='t';
 
-create view qci_ec_products_searchable
-as
-select * from qci_ec_products
-where active_p='t' and present_p='t';
-
-create table qci_ec_products_audit (
-        product_id              integer,
-        product_name            varchar(200),
-        creation_date           timestamptz,
-        one_line_description    varchar(400),
-        detailed_description    varchar(4000),
-        search_keywords         varchar(4000),
-        price                   numeric,
-        shipping                numeric,
-        shipping_additional     numeric,
-        weight                  numeric,
-        dirname                 varchar(200),
-        present_p               boolean default 't',
-        active_p                boolean default 't',
-        available_date          timestamptz,
-        announcements           varchar(4000),
-        announcements_expire    timestamptz,
-        url                     varchar(300),
-        template_id             integer,
-        stock_status            char(1) check (stock_status in ('o','q','m','s','i')),
-        last_modified           timestamptz,
-        last_modifying_user     integer,
-        modified_ip_address     varchar(20),
-        delete_p                boolean default 'f'
-);
-
-create function qci_ec_products_audit_tr ()
-returns opaque as '
-begin
-        insert into qci_ec_products_audit (
-        product_id, product_name, creation_date,
-        one_line_description, detailed_description,
-        search_keywords, shipping,
-        shipping_additional, weight,
-        dirname, present_p,
-        active_p, available_date,
-        announcements, announcements_expire, 
-        url, template_id,
-        stock_status,
-        last_modified,
-        last_modifying_user, modified_ip_address
-        ) values (
-        old.product_id, old.product_name, old.creation_date,
-        old.one_line_description, old.detailed_description,
-        old.search_keywords, old.shipping,
-        old.shipping_additional, old.weight,
-        old.dirname, old.present_p,
-        old.active_p, old.available_date,
-        old.announcements, old.announcements_expire, 
-        old.url, old.template_id,
-        old.stock_status,
-        old.last_modified,
-        old.last_modifying_user, old.modified_ip_address
-        );
-	return new;
-end;' language 'plpgsql';
-
-create trigger qci_ec_products_audit_tr
-after update or delete on qci_ec_products
-for each row execute procedure qci_ec_products_audit_tr ();
 
 
 -- people who bought product_id also bought products 0 through
@@ -368,54 +162,6 @@ end;' language 'plpgsql';
 create trigger qci_ec_sale_prices_audit_tr
 after update or delete on qci_ec_sale_prices
 for each row execute procedure qci_ec_sale_prices_audit_tr ();
-
-
-create table qci_ec_product_series_map (
-        -- this is the product_id of a product that happens to be
-        -- a series
-        series_id               integer not null references qci_ec_products,
-        -- this is the product_id of a product that is one of the
-        -- components of the above series
-        component_id            integer not null references qci_ec_products,
-        primary key (series_id, component_id),
-        last_modified           timestamptz not null,
-        last_modifying_user     integer not null references users,
-        modified_ip_address     varchar(20) not null
-);
-
-create index qci_ec_product_series_map_idx2 on qci_ec_product_series_map(component_id);
-
-create table qci_ec_product_series_map_audit (
-        series_id               integer,
-        component_id            integer,
-        last_modified           timestamptz,
-        last_modifying_user     integer,
-        modified_ip_address     varchar(20),
-        delete_p                boolean default 'f'
-);
-
-
-create function qci_ec_product_series_map_audit_tr ()
-returns opaque as '
-begin
-        insert into qci_ec_product_series_map_audit (
-        series_id, component_id,
-        last_modified,
-        last_modifying_user, modified_ip_address
-        ) values (
-        old.series_id, old.component_id,
-        old.last_modified,
-        old.last_modifying_user, old.modified_ip_address      
-        );
-	return new;
-end;' language 'plpgsql';
-
-create trigger qci_ec_product_series_map_audit_tr
-after update or delete on qci_ec_product_series_map
-for each row execute procedure qci_ec_product_series_map_audit_tr ();
-
-
-
 
 
 -- this specifies that product_a links to product_b on the display page for product_a
