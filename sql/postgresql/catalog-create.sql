@@ -43,7 +43,7 @@ CREATE TABLE qci_parts (
     lastcost numeric,
 
     -- based on ec_products.ship_satus
-    -- the useage is split to qci_parts.order_turnaround and qci_parts.onhand
+    -- the usage is split to qci_parts.order_turnaround and qci_parts.onhand
     -- q = ships quickly, m = ships moderately quickly, s = ships slowly
     -- o = special, i = inconsistent/unknown/ask
     -- messages are changeable
