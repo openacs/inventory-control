@@ -143,7 +143,7 @@ create table qci_ec_sale_prices_audit (
 
 
 create function qci_ec_sale_prices_audit_tr ()
-returns opaque as '
+returns trigger as '
 begin
         insert into qci_ec_sale_prices_audit (
         sale_price_id, product_id, sale_price,
@@ -186,7 +186,7 @@ create table qci_ec_product_links_audit (
 );
 
 create function qci_ec_product_links_audit_tr ()
-returns opaque as '
+returns trigger as '
 begin
         insert into qci_ec_product_links_audit (
         product_a, product_b,
@@ -238,7 +238,7 @@ create table qci_ec_custom_product_fields_audit (
 );
 
 create function qci_ec_custom_prod_fields_audit_tr ()
-returns opaque as '
+returns trigger as '
 begin
         insert into qci_ec_custom_product_fields_audit (
         field_identifier, field_name,
@@ -281,7 +281,7 @@ create table qci_ec_custom_p_field_values_audit (
 );
 
 create function qci_ec_custom_p_f_values_audit_tr ()
-returns opaque as '
+returns trigger as '
 begin
         insert into qci_ec_custom_p_field_values_audit (
         product_id,

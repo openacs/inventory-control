@@ -302,7 +302,7 @@ create table qci_ec_products_audit (
 );
 
 create function qci_ec_products_audit_tr ()
-returns opaque as '
+returns trigger as '
 begin
      insert into qci_ec_products_audit (
      product_id, product_name, creation_date,
@@ -366,7 +366,7 @@ create table qci_product_series_map_audit (
 
 
 create function qci_product_series_map_audit_tr ()
-returns opaque as '
+returns trigger as '
 begin
      insert into qci_product_series_map_audit (
      series_id, product_id,
